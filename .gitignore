@@ -1,0 +1,5 @@
+*.exe
+*.stackdump
+*.7z
+test.txt
+.vscode
