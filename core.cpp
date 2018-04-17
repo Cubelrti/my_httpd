@@ -4,8 +4,6 @@
 using namespace std;
 
 
-
-
 Server::Server(unsigned short port = 4396)
 {
     int server_socket = -1;
@@ -74,8 +72,6 @@ int Server::get_line(int client_socket, string &line, int count){
             c = '\n';
         }
     }
-    
-
     return i;
 }
 
@@ -165,6 +161,11 @@ void Server::accept_request(int client_socket){
 }
 
 void Server::serve_file(int client, string filename){
+    if(filename == "/")
+    {
+        filename = "/index.html";
+    }
+    
     ifstream fin(filename.substr(1), std::ios::binary);
     if (!fin.is_open()) {
         not_found(client);
