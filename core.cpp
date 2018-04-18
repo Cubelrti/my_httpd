@@ -41,6 +41,7 @@ Server::~Server(){
 
 }
 
+// fixme this is stupid.
 int Server::get_line(int client_socket, string &line, int count){
     int i = 0;
     char c = '\0';
@@ -78,7 +79,7 @@ int Server::get_line(int client_socket, string &line, int count){
 void Server::send_headers(int client, string status, string type = "text/html"){
     const string version_status = "HTTP/1.1 " + status + "\r\n";
     const string server_description = "Server: bjtuhttpd/1.0.0\r\n";
-    const string content_type = "Content-Type: " + type + "\r\n";
+    const string content_type = type == "" ? "" : "Content-Type: " + type + "\r\n";
     const string break_header = "\r\n";
     stringstream header;
     header << version_status << server_description << content_type << break_header;
@@ -124,14 +125,7 @@ void Server::accept_request(int client_socket){
         i++;
     }
     j = i; // assign i -> j offset of METHOD.
-    if( method != "GET" ){ // todo POST impl
-        cout << "ERROR: NOT_IMPL"<<  method << endl;
-        unimplemented(client_socket);
-        shutdown(client_socket, SHUT_WR);
-        cout << "FINISHED_ITER" << endl;
-        thread_counter--;
-        return;
-    }
+
     i = 0; // reset i;
     while( isspace(buf[j]) && (j < numchars))
     {
@@ -149,14 +143,28 @@ void Server::accept_request(int client_socket){
 
     if(method == "GET")
     {
-        query_string = url;
         // todo fixme a naive removal of question mark.
-        //cout << query_string;
+        serve_file(client_socket, url);
+        close_connection(client_socket);
+        return;
     }
-    //send_4396(client_socket);
-    serve_file(client_socket, url);
+    if(method == "HEAD")
+    {
+        send_headers(client_socket, "200 OK", "");
+        return;
+    }
+    
+    cout << "ERROR: NOT_IMPL"<<  method << endl;
+    unimplemented(client_socket);
+    close_connection(client_socket);
+    return ;
+
+    
+}
+
+void Server::close_connection(int client_socket){
     shutdown(client_socket, SHUT_WR);
-    cout << "FINISHED_ITER" << endl;
+    cout << "closed connection: "<< client_socket  << endl;
     thread_counter--;
 }
 
@@ -164,6 +172,10 @@ void Server::serve_file(int client, string filename){
     if(filename == "/")
     {
         filename = "/index.html";
+    }
+    if(filename.find("../") != std::string::npos){
+        send_headers(client, "403 Forbidden");
+        return;
     }
     
     ifstream fin(filename.substr(1), std::ios::binary);
