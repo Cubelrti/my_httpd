@@ -174,7 +174,7 @@ void Server::serve_file(int client, string filename){
         filename = "/index.html";
     }
     if(filename.find("../") != std::string::npos){
-        send_headers(client, "403 Forbidden");
+        send_headers(client, "403 Forbidden", "");
         return;
     }
     
