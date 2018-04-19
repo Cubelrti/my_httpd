@@ -93,11 +93,11 @@ void Server::not_found(int client)
 {
     send_headers(client, "404 Not Found");
     const string html = R"(
-        <HTML><TITLE>Error</TITLE>\r\n
-        <BODY><P>Server cannot fulfill\r\n
-        your request because the resource specified\r\n
-        is unavailable or nonexistent.\r\n
-        </BODY></HTML>\r\n)";
+        <HTML><TITLE>Error</TITLE>
+        <BODY><P>Server cannot fulfill
+        your request because the resource specified
+        is unavailable or nonexistent.
+        </BODY></HTML>)";
     auto html_cstr = html.c_str();
     send(client, html_cstr, strlen(html_cstr), 0);
 }
