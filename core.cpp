@@ -18,7 +18,7 @@ Server::Server(unsigned short port = 4396)
     server_socket = startup(port);
     cout << "httpd running: " << port << endl;
 
-    while(1)
+    while(1) // core-loop
     {
          client_socket = accept(server_socket,
                 (struct sockaddr *)&client_name,
@@ -27,12 +27,11 @@ Server::Server(unsigned short port = 4396)
             // fixme die accept
             cout << "Socket_Not_Accepted" << endl;
         }
-        // create a thread on thread pool.
         auto f_ptr = std::bind(&accept_request, this, client_socket);
-        //thread (f_ptr);
+        // fixme this leak memory!
         thread *leaker = new thread(f_ptr);
         //thread_pool[thread_counter++] = thread(f_ptr);
-    } // end core-loop
+    }
     
 }
 
@@ -127,20 +126,15 @@ void Server::unimplemented(int client){
 
 void Server::not_found(int client)
 {
-    
-    char buf[1024];
-
     send_headers(client, "404 Not Found");
-    sprintf(buf, "<HTML><TITLE>Error</TITLE>\r\n");
-    send(client, buf, strlen(buf), 0);
-    sprintf(buf, "<BODY><P>Server cannot fulfill\r\n");
-    send(client, buf, strlen(buf), 0);
-    sprintf(buf, "your request because the resource specified\r\n");
-    send(client, buf, strlen(buf), 0);
-    sprintf(buf, "is unavailable or nonexistent.\r\n");
-    send(client, buf, strlen(buf), 0);
-    sprintf(buf, "</BODY></HTML>\r\n");
-    send(client, buf, strlen(buf), 0);
+    const string html = R"(
+        <HTML><TITLE>Error</TITLE>\r\n
+        <BODY><P>Server cannot fulfill\r\n
+        your request because the resource specified\r\n
+        is unavailable or nonexistent.\r\n
+        </BODY></HTML>\r\n)";
+    auto html_cstr = html.c_str();
+    send(client, html_cstr, strlen(html_cstr), 0);
 }
 
 
