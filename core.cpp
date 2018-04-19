@@ -39,44 +39,9 @@ Server::~Server(){
 
 }
 
-// fixme this is stupid.
-int Server::get_line(int client_socket, string &line, int count){
-    int i = 0;
-    char c = '\0';
-    int n;
-    while((i < count - 1) && (c != '\n'))
-    {
-        n = recv(client_socket, &c, 1, 0);
-        if(n > 0)
-        {
-            if(c == '\r')
-            {
-                n = recv(client_socket, &c, 1, MSG_PEEK);
-                if((n > 0) && (c == '\n'))
-                {
-                    recv(client_socket, &c, 1, 0);
-                }
-                else 
-                {
-                    c = '\n';
-                }
-
-            }
-            line.push_back(c);
-            i++;
-        } 
-        else 
-        {
-            c = '\n';
-        }
-    }
-    return i;
-}
-
-string Server::new_get_line(int client_socket){
+int Server::get_line(int client_socket, string& line){
     int state;
     char next_char = '\0';
-    string line = "";
 
     while(next_char != '\n')
     {
@@ -104,7 +69,7 @@ string Server::new_get_line(int client_socket){
             next_char = '\n';
         }
     }
-    return line;
+    return line.length();
 
 }
 
@@ -145,7 +110,7 @@ void Server::accept_request(int client_socket){
     size_t numchars, i = 0, j = 0;
     struct stat st;
     string query_string = "";
-    numchars = get_line(client_socket, buf, 1024); // 1024 is longest buffer.
+    numchars = get_line(client_socket, buf);
     while(!isspace(buf[i]) && (i < 254)) // 254 is a method number.
     {
         method.push_back(buf[i]);

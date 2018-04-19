@@ -35,11 +35,10 @@ private:
   int startup(unsigned short port);
   void accept_request(int client_socket);
   void bad_request(int client_socket);
-  int get_line(int client_socket, string &line, int count);
   void headers(int client_socket, string header);
   void not_found(int client_socket);
   void serve_file(int client_socket, string filename);
   void unimplemented(int client_socket);
   void close_connection(int client_socket);
-  string new_get_line(int client_socket);
+  int get_line(int client_socket, string &line);
 };
