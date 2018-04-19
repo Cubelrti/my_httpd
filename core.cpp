@@ -57,7 +57,6 @@ int Server::get_line(int client_socket, string &line, int count){
                 if((n > 0) && (c == '\n'))
                 {
                     recv(client_socket, &c, 1, 0);
-                    
                 }
                 else 
                 {
@@ -74,6 +73,41 @@ int Server::get_line(int client_socket, string &line, int count){
         }
     }
     return i;
+}
+
+string Server::new_get_line(int client_socket){
+    int state;
+    char next_char = '\0';
+    string line = "";
+
+    while(next_char != '\n')
+    {
+        state = recv(client_socket, &next_char, 1, 0);
+        if(state > 0){
+            if(next_char == '\r')
+            {
+                // try to peek next char.
+                state = recv(client_socket, &next_char, 1, MSG_PEEK);
+                if((state > 0) && (next_char == '\n'))
+                {
+                    // read the final \0 char
+                    recv(client_socket, &next_char, 1, 0);
+                }
+                else {
+                    // ended unexpectedly. terminating.
+                    next_char = '\n';
+                }
+            }
+            line.push_back(next_char);
+        }
+        else 
+        {
+            // state illegal. force terminating reader.
+            next_char = '\n';
+        }
+    }
+    return line;
+
 }
 
 void Server::send_headers(int client, string status, string type = "text/html"){

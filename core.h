@@ -40,4 +40,5 @@ private:
   void serve_file(int client_socket, string filename);
   void unimplemented(int client_socket);
   void close_connection(int client_socket);
+  string new_get_line(int client_socket);
 };
