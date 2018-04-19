@@ -5,6 +5,7 @@
 #include <vector>
 #include <sstream>
 #include <unistd.h>
+#include <algorithm>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>

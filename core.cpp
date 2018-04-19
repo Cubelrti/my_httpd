@@ -1,6 +1,5 @@
 #include "core.h"
 
-#define ISspace(x) isspace((int)(x))
 using namespace std;
 
 
@@ -153,7 +152,7 @@ void Server::accept_request(int client_socket){
     struct stat st;
     string query_string = "";
     numchars = get_line(client_socket, buf, 1024); // 1024 is longest buffer.
-    while(!isspace(buf[i]) && (i < 254)) // 254 is a magic method number.
+    while(!isspace(buf[i]) && (i < 254)) // 254 is a method number.
     {
         method.push_back(buf[i]);
         i++;
@@ -188,7 +187,7 @@ void Server::accept_request(int client_socket){
         return;
     }
     
-    cout << "ERROR: NOT_IMPL"<<  method << endl;
+    cout << "ERROR: NOT_IMPL" << endl;
     unimplemented(client_socket);
     close_connection(client_socket);
     return ;
@@ -211,12 +210,16 @@ void Server::serve_file(int client, string filename){
         send_headers(client, "403 Forbidden", "");
         return;
     }
-    
-    ifstream fin(filename.substr(1), std::ios::binary);
+    size_t file_size;
+    ifstream fin(filename.substr(1), std::ios::binary | ios::ate);
+
     if (!fin.is_open()) {
         not_found(client);
         return;
 	}
+    file_size = fin.tellg();
+    // reset file.
+    fin.seekg(0);
     if(filename.substr(filename.find_last_of('.')) == ".html"){
         send_headers(client, "200 OK");
     }
@@ -226,7 +229,8 @@ void Server::serve_file(int client, string filename){
     char buffer[1024]; // read 1MB file each
     while(!fin.eof()){
         fin.read(buffer, sizeof buffer);
-        send(client, buffer, strlen(buffer), 0);
+        send(client, buffer, min(1024, static_cast<int>(file_size)), 0);
+        file_size -= 1024;
     }
     fin.close();
 }
