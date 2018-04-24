@@ -18,9 +18,9 @@ Server::Server(unsigned short port = 4396)
 
     while(1) // core-loop
     {
-         client_socket = accept(server_socket,
-                (struct sockaddr *)&client_name,
-                &client_name_len);
+        client_socket = accept(server_socket,
+                               (struct sockaddr *)&client_name,
+                               &client_name_len);
         if (client_socket == -1){
             // fixme die accept
             cout << "Socket_Not_Accepted" << endl;
@@ -40,10 +40,10 @@ Server::Server(unsigned short port = 4396)
             for(unsigned int i = 0; i < th_pool_size; i++)
             {
                 cout << "Cleaning thread pool..." << endl;
-                auto running = this->threads.back();
+                auto running = this->threads.front();
                 running->join();
                 delete running;
-                this->threads.pop_back();
+                this->threads.erase(this->threads.begin());
             }
             cout << "Cleaning thread pool done." << endl;
         }
@@ -96,7 +96,7 @@ void Server::send_headers(int client, string status, string type = "text/html"){
     stringstream header;
     header << version_status << server_description << content_type << break_header;
     auto header_cstr = header.str().c_str();
-    cout << "Sending header: " << header.str();
+    //cout << "Sending header: " << header.str();
     send(client, header_cstr, strlen(header_cstr), 0);
 }
 
@@ -171,7 +171,6 @@ void Server::accept_request(int client_socket){
 void Server::close_connection(int client_socket){
     shutdown(client_socket, SHUT_WR);
     cout << "closed connection: "<< client_socket  << endl;
-    thread_counter--;
 }
 
 void Server::serve_file(int client, string filename){
@@ -202,7 +201,7 @@ void Server::serve_file(int client, string filename){
     char buffer[1024]; // read 1MB file each
     while(!fin.eof()){
         fin.read(buffer, sizeof buffer);
-        send(client, buffer, min(1024, static_cast<int>(file_size)), 0);
+        send(client, buffer, min(1024, static_cast<int>(file_size)), MSG_NOSIGNAL);
         file_size -= 1024;
     }
     fin.close();
