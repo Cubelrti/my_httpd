@@ -10,8 +10,6 @@ Server::Server(unsigned short port = 4396)
     struct sockaddr_in client_name;
     socklen_t  client_name_len = sizeof(client_name);
     
-    
-
     // Create a server.
     //unique_ptr<Server> pServer(new Server());
     //server_socket = pServer->startup(port);
@@ -29,10 +27,9 @@ Server::Server(unsigned short port = 4396)
         }
         auto f_ptr = std::bind(&accept_request, this, client_socket);
         // fixme this leak memory!
-        thread *leaker = new thread(f_ptr);
+        thread *t_ptr = new thread(f_ptr);
         //thread_pool[thread_counter++] = thread(f_ptr);
     }
-    
 }
 
 Server::~Server(){
