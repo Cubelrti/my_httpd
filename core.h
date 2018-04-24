@@ -30,7 +30,7 @@ public:
     ~Server();
 private:
   int thread_counter = 0;
-  thread thread_pool[num_threads];
+  vector<thread *> threads;
   void send_headers(int client, string status, string type);
   int startup(unsigned short port);
   void accept_request(int client_socket);

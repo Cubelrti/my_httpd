@@ -25,10 +25,28 @@ Server::Server(unsigned short port = 4396)
             // fixme die accept
             cout << "Socket_Not_Accepted" << endl;
         }
+
         auto f_ptr = std::bind(&accept_request, this, client_socket);
-        // fixme this leak memory!
         thread *t_ptr = new thread(f_ptr);
-        //thread_pool[thread_counter++] = thread(f_ptr);
+        this->threads.push_back(t_ptr);
+
+        // a thread counter to avoid it gone too far
+        auto th_pool_size = this->threads.size();
+        cout << "Current thread pool:" << th_pool_size << endl;
+        if(th_pool_size > num_threads){
+            // blocking main thread to wait all of them to stop.
+            // this seems stupid. if the first thread stay too long, it will never join.
+            // that makes all the cycle stop.
+            for(unsigned int i = 0; i < th_pool_size; i++)
+            {
+                cout << "Cleaning thread pool..." << endl;
+                auto running = this->threads.back();
+                running->join();
+                delete running;
+                this->threads.pop_back();
+            }
+            cout << "Cleaning thread pool done." << endl;
+        }
     }
 }
 
@@ -105,7 +123,6 @@ void Server::accept_request(int client_socket){
 
     string buf, method, url, path;
     size_t numchars, i = 0, j = 0;
-    struct stat st;
     string query_string = "";
     numchars = get_line(client_socket, buf);
     while(!isspace(buf[i]) && (i < 254)) // 254 is a method number.

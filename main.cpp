@@ -9,11 +9,11 @@ int main(int argc, char const *argv[])
         size_t pos = str.find("--port=");
         if(pos != string::npos){
             int port = stoi(str.substr(7));
-            Server* server = new Server(port);
+            new Server(port);
             return 0;
         }
     }
-    Server* server = new Server(4396);
+    new Server(4396);
 
     return 0;
 }
