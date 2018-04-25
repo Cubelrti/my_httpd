@@ -20,7 +20,7 @@
 
 using namespace std;
 
-const string SERVER_STRING = "Server: myhttpd/1.0.0\r\n";
+const string SERVER_STRING = "Server: bjtuhttpd/1.0.0\r\n";
 static const unsigned int num_threads = 20;
 
 class Server

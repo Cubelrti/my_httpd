@@ -26,7 +26,7 @@ Server::Server(unsigned short port = 4396)
             cout << "Socket_Not_Accepted" << endl;
         }
 
-        auto f_ptr = std::bind(&accept_request, this, client_socket);
+        auto f_ptr = std::bind(&Server::accept_request, this, client_socket);
         thread *t_ptr = new thread(f_ptr);
         this->threads.push_back(t_ptr);
 
