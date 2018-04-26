@@ -192,7 +192,7 @@ void Server::serve_file(int client, string filename){
     file_size = fin.tellg();
     // reset file.
     fin.seekg(0);
-    if(filename.substr(filename.find_last_of('.')) == ".html"){
+    if(filename.find('.') != std::string::npos && filename.substr(filename.find_last_of('.')) == ".html"){
         send_headers(client, "200 OK");
     }
     else {
