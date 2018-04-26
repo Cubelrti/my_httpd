@@ -10,9 +10,6 @@ Server::Server(unsigned short port = 4396)
     struct sockaddr_in client_name;
     socklen_t  client_name_len = sizeof(client_name);
     
-    // Create a server.
-    //unique_ptr<Server> pServer(new Server());
-    //server_socket = pServer->startup(port);
     server_socket = startup(port);
     cout << "httpd running: " << port << endl;
 
@@ -22,8 +19,8 @@ Server::Server(unsigned short port = 4396)
                                (struct sockaddr *)&client_name,
                                &client_name_len);
         if (client_socket == -1){
-            // fixme die accept
             cout << "Socket_Not_Accepted" << endl;
+            return;
         }
 
         auto f_ptr = std::bind(&Server::accept_request, this, client_socket);
@@ -215,7 +212,6 @@ int Server::startup(unsigned short port){
     httpd = socket(PF_INET, SOCK_STREAM, 0);
     if(httpd == -1)
     {
-        // fixme die socket
         cout << "Socket_Not_Avalible" << endl;
     }
 	struct sockaddr_in serv_addr;
@@ -224,14 +220,11 @@ int Server::startup(unsigned short port){
 	serv_addr.sin_port = htons(port);
     if ((setsockopt(httpd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on))) < 0)  
     {   
-        // fixme die socket
-        cout << "Socket_Not_Avalible" << endl;
+        cout << "Socket_Set_Failed" << endl;
     }
     if (bind(httpd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-        // fixme die socket
-        cout << "Socket_Not_Avalible" << endl;
+        cout << "Socket_Bind_Failed" << endl;
     if (listen(httpd, 5) < 0)
-        // fixme die socket
-        cout << "Socket_Not_Avalible" << endl;
+        cout << "Socket_Listen_Failed" << endl;
     return httpd;
 }

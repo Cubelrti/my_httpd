@@ -1,2 +1,2 @@
 myhttpd: main.cpp.exe
-	g++ -g -W -Wall -o main.cpp.exe main.cpp core.cpp
+	g++ -std=c++11 -g -W -Wall -o main.cpp.exe main.cpp core.cpp
