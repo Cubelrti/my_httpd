@@ -95,9 +95,9 @@ void Server::send_headers(int client, string status, string type = "text/html"){
     const string break_header = "\r\n";
     stringstream header;
     header << version_status << server_description << content_type << break_header;
-    auto header_cstr = header.str().c_str();
+    auto header_str = header.str();
     cout << "Sending header: " << header.str();
-    send(client, header_cstr, strlen(header_cstr), 0);
+    send(client, header_str.c_str(), header_str.size(), 0);
 }
 
 void Server::unimplemented(int client){
