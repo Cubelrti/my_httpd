@@ -13,7 +13,7 @@ Server::Server(unsigned short port = 4396)
     server_socket = startup(port);
     cout << "httpd running: " << port << endl;
 
-    struct pollfd poll_set[6000];
+    struct pollfd poll_set[1024];
     int numfds = 0;
     poll_set[0].fd = server_socket;
     poll_set[0].events = POLLIN;
@@ -36,8 +36,13 @@ Server::Server(unsigned short port = 4396)
                     if (client_socket == -1){
                         cout << "WHOOPS! Server can't handle that!" << endl;
                         cout << "RESETING SERVER NOW!"<< endl;
+                        close(server_socket);
                         server_socket = startup(port);
-                        continue;
+                        //memset(poll_set, 0, sizeof(pollfd) * 6000);
+                        poll_set[0].fd = server_socket;
+                        poll_set[0].events = POLLIN;
+                        numfds = 1;
+                        break;
                     }
                     poll_set[numfds].fd = client_socket;
                     poll_set[numfds].events = POLLIN;
@@ -51,7 +56,7 @@ Server::Server(unsigned short port = 4396)
                     if (nread == 0)
                     {
                         close_connection(poll_set[fd_index].fd);
-                        //close(poll_set[fd_index].fd);
+                        close(poll_set[fd_index].fd);
                         poll_set[fd_index].events = 0;
                         cout << "Removing client on " << poll_set[fd_index].fd << endl;
                         int i;
@@ -240,6 +245,7 @@ void Server::accept_request(int client_socket){
 
 void Server::close_connection(int client_socket){
     shutdown(client_socket, SHUT_WR);
+    //close(client_socket);
     cout << "closed connection: "<< client_socket  << endl;
 }
 
