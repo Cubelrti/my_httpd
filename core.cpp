@@ -13,37 +13,101 @@ Server::Server(unsigned short port = 4396)
     server_socket = startup(port);
     cout << "httpd running: " << port << endl;
 
+    struct pollfd poll_set[32];
+    int numfds = 0;
+    poll_set[0].fd = server_socket;
+    poll_set[0].events = POLLIN;
+    numfds++;
+
     while(1) // core-loop
     {
-        client_socket = accept(server_socket,
+        int nread;
+        cout << "Waiting_for_Client (" << numfds << " total)... " << endl;
+        poll(poll_set, numfds, -1);
+        for(int fd_index = 0; fd_index < numfds; fd_index++)
+        {
+            if(poll_set[fd_index].revents & POLLIN)
+            {
+                if(poll_set[fd_index].fd == server_socket)
+                {
+                    client_socket = accept(server_socket,
                                (struct sockaddr *)&client_name,
                                &client_name_len);
-        if (client_socket == -1){
-            cout << "Socket_Not_Accepted" << endl;
-            return;
-        }
+                    poll_set[numfds].fd = client_socket;
+                    poll_set[numfds].events = POLLIN;
+                    numfds++;
+                    cout << "Adding_Client on "<< client_socket << endl;
+                }
+                else 
+                {
+                    ioctl(poll_set[fd_index].fd, FIONREAD, &nread);
 
-        auto f_ptr = std::bind(&Server::accept_request, this, client_socket);
-        thread *t_ptr = new thread(f_ptr);
-        this->threads.push_back(t_ptr);
-
-        // a thread counter to avoid it gone too far
-        auto th_pool_size = this->threads.size();
-        cout << "Current thread pool:" << th_pool_size << endl;
-        if(th_pool_size > num_threads){
-            // blocking main thread to wait all of them to stop.
-            // this seems stupid. if the first thread stay too long, it will never join.
-            // that makes all the cycle stop.
-            for(unsigned int i = 0; i < th_pool_size; i++)
-            {
-                cout << "Cleaning thread pool..." << endl;
-                auto running = this->threads.front();
-                running->join();
-                delete running;
-                this->threads.erase(this->threads.begin());
+                    if (nread == 0)
+                    {
+                        close_connection(poll_set[fd_index].fd);
+                        //close(poll_set[fd_index].fd);
+                        poll_set[fd_index].events = 0;
+                        cout << "Removing client on " << poll_set[fd_index].fd << endl;
+                        int i;
+                        for (i = fd_index; i < numfds; i++)
+                        {
+                            poll_set[i] = poll_set[i + 1];
+                        }
+                        numfds--;
+                    }
+                    else
+                    {
+                        cout << "Client " << poll_set[fd_index].fd << " is ready. Serving" << endl;
+                        accept_request(poll_set[fd_index].fd);
+                    }
+                }
             }
-            cout << "Cleaning thread pool done." << endl;
+            
         }
+        
+
+        // client_socket = accept(server_socket,
+        //                        (struct sockaddr *)&client_name,
+        //                        &client_name_len);
+        // if (client_socket == -1){
+        //     cout << "Socket_Not_Accepted" << endl;
+        //     return;
+        // }
+
+        // struct pollfd fds[1];
+        // fds[0].events = POLLIN;
+        // fds[0].fd = client_socket;
+        // int pret = poll(fds, 1, 5000);
+        // if(pret == 0){
+        //     cout << "ETIMEOUT from poll" << endl;
+        // }
+        // else{
+        //     // go processing
+        //     accept_request(client_socket);
+        // }
+
+        // fixme old implmentation!
+        // auto f_ptr = std::bind(&Server::accept_request, this, client_socket);
+        // thread *t_ptr = new thread(f_ptr);
+        // this->threads.push_back(t_ptr);
+
+        // // a thread counter to avoid it gone too far
+        // auto th_pool_size = this->threads.size();
+        // cout << "Current thread pool:" << th_pool_size << endl;
+        // if(th_pool_size > num_threads){
+        //     // blocking main thread to wait all of them to stop.
+        //     // this seems stupid. if the first thread stay too long, it will never join.
+        //     // that makes all the cycle stop.
+        //     for(unsigned int i = 0; i < th_pool_size; i++)
+        //     {
+        //         cout << "Cleaning thread pool..." << endl;
+        //         auto running = this->threads.front();
+        //         running->join();
+        //         delete running;
+        //         this->threads.erase(this->threads.begin());
+        //     }
+        //     cout << "Cleaning thread pool done." << endl;
+        // }
     }
 }
 
@@ -93,7 +157,7 @@ void Server::send_headers(int client, string status, string type = "text/html"){
     stringstream header;
     header << version_status << server_description << content_type << break_header;
     auto header_str = header.str();
-    cout << "Sending header: " << header.str();
+    cout << "Sending header: " << version_status;
     send(client, header_str.c_str(), header_str.size(), 0);
 }
 
@@ -117,11 +181,13 @@ void Server::not_found(int client)
 
 
 void Server::accept_request(int client_socket){
-
+    char buffer[1024];
     string buf, method, url, path;
     size_t numchars, i = 0, j = 0;
     string query_string = "";
     numchars = get_line(client_socket, buf);
+    // read the rest
+    read(client_socket, buffer, 1024);
     while(!isspace(buf[i]) && (i < 254)) // 254 is a method number.
     {
         method.push_back(buf[i]);
@@ -140,7 +206,7 @@ void Server::accept_request(int client_socket){
         i++;
         j++;
     }
-    cout << url << endl;
+    //cout << url << endl;
     
     
 
@@ -157,9 +223,9 @@ void Server::accept_request(int client_socket){
         return;
     }
     
-    cout << "ERROR: NOT_IMPL" << endl;
-    unimplemented(client_socket);
-    close_connection(client_socket);
+    // cout << "ERROR: NOT_IMPL" << endl;
+    // unimplemented(client_socket);
+    // close_connection(client_socket);
     return ;
 
     
