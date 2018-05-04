@@ -35,13 +35,6 @@ Server::Server(unsigned short port = 4396)
                                &client_name_len);
                     if (client_socket == -1){
                         cout << "WHOOPS! Server can't handle that!" << endl;
-                        cout << "RESETING SERVER NOW!"<< endl;
-                        close(server_socket);
-                        server_socket = startup(port);
-                        //memset(poll_set, 0, sizeof(pollfd) * 6000);
-                        poll_set[0].fd = server_socket;
-                        poll_set[0].events = POLLIN;
-                        numfds = 1;
                         break;
                     }
                     poll_set[numfds].fd = client_socket;
@@ -75,50 +68,6 @@ Server::Server(unsigned short port = 4396)
             }
             
         }
-        
-
-        // client_socket = accept(server_socket,
-        //                        (struct sockaddr *)&client_name,
-        //                        &client_name_len);
-        // if (client_socket == -1){
-        //     cout << "Socket_Not_Accepted" << endl;
-        //     return;
-        // }
-
-        // struct pollfd fds[1];
-        // fds[0].events = POLLIN;
-        // fds[0].fd = client_socket;
-        // int pret = poll(fds, 1, 5000);
-        // if(pret == 0){
-        //     cout << "ETIMEOUT from poll" << endl;
-        // }
-        // else{
-        //     // go processing
-        //     accept_request(client_socket);
-        // }
-
-        // fixme old implmentation!
-        // auto f_ptr = std::bind(&Server::accept_request, this, client_socket);
-        // thread *t_ptr = new thread(f_ptr);
-        // this->threads.push_back(t_ptr);
-
-        // // a thread counter to avoid it gone too far
-        // auto th_pool_size = this->threads.size();
-        // cout << "Current thread pool:" << th_pool_size << endl;
-        // if(th_pool_size > num_threads){
-        //     // blocking main thread to wait all of them to stop.
-        //     // this seems stupid. if the first thread stay too long, it will never join.
-        //     // that makes all the cycle stop.
-        //     for(unsigned int i = 0; i < th_pool_size; i++)
-        //     {
-        //         cout << "Cleaning thread pool..." << endl;
-        //         auto running = this->threads.front();
-        //         running->join();
-        //         delete running;
-        //         this->threads.erase(this->threads.begin());
-        //     }
-        //     cout << "Cleaning thread pool done." << endl;
-        // }
     }
 }
 
@@ -234,7 +183,11 @@ void Server::accept_request(int client_socket){
         send_headers(client_socket, "200 OK", "");
         return;
     }
-    
+    if(method == "DELETE"){
+        delete_file(client_socket, url);
+        close_connection(client_socket);
+        return;
+    }
     // cout << "ERROR: NOT_IMPL" << endl;
     // unimplemented(client_socket);
     // close_connection(client_socket);
@@ -245,8 +198,22 @@ void Server::accept_request(int client_socket){
 
 void Server::close_connection(int client_socket){
     shutdown(client_socket, SHUT_WR);
-    //close(client_socket);
-    cout << "closed connection: "<< client_socket  << endl;
+}
+
+void Server::delete_file(int client, string filename){
+    if(filename.find("../") != std::string::npos){
+        send_headers(client, "403 Forbidden", "");
+        return;
+    }
+    if( remove( filename.substr(1).c_str() ) != 0 )
+    {
+        cout << "Error deleting file" << endl;
+        send_headers(client, "500 Internal Server Error", "");
+    }
+    else
+    {
+        send_headers(client, "200 OK");
+    }
 }
 
 void Server::serve_file(int client, string filename){
@@ -272,7 +239,11 @@ void Server::serve_file(int client, string filename){
         send_headers(client, "200 OK");
     }
     else {
-        send_headers(client, "200 OK", "application/octet-stream");
+        stringstream header_ext;
+        header_ext << "application/octet-stream\n";
+        header_ext << "Content-Length: ";
+        header_ext << file_size;
+        send_headers(client, "200 OK", header_ext.str());
     }
     char buffer[1024]; // read 1MB file each
     while(!fin.eof()){

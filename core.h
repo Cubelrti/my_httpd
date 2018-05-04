@@ -39,6 +39,7 @@ private:
   void headers(int client_socket, string header);
   void not_found(int client_socket);
   void serve_file(int client_socket, string filename);
+  void delete_file(int client_socket, string filename);
   void unimplemented(int client_socket);
   void close_connection(int client_socket);
   int get_line(int client_socket, string &line);
