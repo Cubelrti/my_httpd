@@ -13,7 +13,7 @@ Server::Server(unsigned short port = 4396)
     server_socket = startup(port);
     cout << "httpd running: " << port << endl;
 
-    struct pollfd poll_set[32];
+    struct pollfd poll_set[6000];
     int numfds = 0;
     poll_set[0].fd = server_socket;
     poll_set[0].events = POLLIN;
@@ -33,6 +33,12 @@ Server::Server(unsigned short port = 4396)
                     client_socket = accept(server_socket,
                                (struct sockaddr *)&client_name,
                                &client_name_len);
+                    if (client_socket == -1){
+                        cout << "WHOOPS! Server can't handle that!" << endl;
+                        cout << "RESETING SERVER NOW!"<< endl;
+                        server_socket = startup(port);
+                        continue;
+                    }
                     poll_set[numfds].fd = client_socket;
                     poll_set[numfds].events = POLLIN;
                     numfds++;
@@ -188,6 +194,7 @@ void Server::accept_request(int client_socket){
     numchars = get_line(client_socket, buf);
     // read the rest
     read(client_socket, buffer, 1024);
+    cout << buffer << endl;
     while(!isspace(buf[i]) && (i < 254)) // 254 is a method number.
     {
         method.push_back(buf[i]);
