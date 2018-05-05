@@ -3,13 +3,13 @@
 using namespace std;
 
 
-Server::Server(unsigned short port = 4396)
+Server::Server(unsigned short port = 4396, bool isIntense = false)
 {
     int server_socket = -1;
     int client_socket = -1;
+    logging = !isIntense;
     struct sockaddr_in client_name;
     socklen_t  client_name_len = sizeof(client_name);
-    
     server_socket = startup(port);
     cout << "httpd running: " << port << endl;
 
@@ -22,7 +22,7 @@ Server::Server(unsigned short port = 4396)
     while(1) // core-loop
     {
         int nread;
-        cout << "Waiting_for_Client (" << numfds << " total)... " << endl;
+        logging && cout << "Waiting_for_Client (" << numfds << " total)... " << endl;
         poll(poll_set, numfds, -1);
         for(int fd_index = 0; fd_index < numfds; fd_index++)
         {
@@ -40,7 +40,7 @@ Server::Server(unsigned short port = 4396)
                     poll_set[numfds].fd = client_socket;
                     poll_set[numfds].events = POLLIN;
                     numfds++;
-                    cout << "Adding_Client on "<< client_socket << endl;
+                    logging && cout << "Adding_Client on "<< client_socket << endl;
                 }
                 else 
                 {
@@ -51,7 +51,7 @@ Server::Server(unsigned short port = 4396)
                         close_connection(poll_set[fd_index].fd);
                         close(poll_set[fd_index].fd);
                         poll_set[fd_index].events = 0;
-                        cout << "Removing client on " << poll_set[fd_index].fd << endl;
+                        logging && cout << "Removing client on " << poll_set[fd_index].fd << endl;
                         int i;
                         for (i = fd_index; i < numfds; i++)
                         {
@@ -61,7 +61,7 @@ Server::Server(unsigned short port = 4396)
                     }
                     else
                     {
-                        cout << "Client " << poll_set[fd_index].fd << " is ready. Serving" << endl;
+                        logging && cout << "Client " << poll_set[fd_index].fd << " is ready. Serving" << endl;
                         accept_request(poll_set[fd_index].fd);
                     }
                 }
@@ -117,7 +117,7 @@ void Server::send_headers(int client, string status, string type = "text/html"){
     stringstream header;
     header << version_status << server_description << content_type << break_header;
     auto header_str = header.str();
-    cout << "Sending header: " << version_status;
+    logging && cout << "Sending header: " << version_status;
     send(client, header_str.c_str(), header_str.size(), 0);
 }
 
@@ -148,7 +148,7 @@ void Server::accept_request(int client_socket){
     numchars = get_line(client_socket, buf);
     // read the rest
     read(client_socket, buffer, 1024);
-    cout << buffer << endl;
+    logging && cout << buffer << endl;
     while(!isspace(buf[i]) && (i < 254)) // 254 is a method number.
     {
         method.push_back(buf[i]);

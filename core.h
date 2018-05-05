@@ -28,8 +28,9 @@ static const unsigned int num_threads = 20;
 class Server
 {
 public:
-    Server(unsigned short port);
+    Server(unsigned short port, bool isIntense);
     ~Server();
+  bool logging;
 private:
   vector<thread *> threads;
   void send_headers(int client, string status, string type);
