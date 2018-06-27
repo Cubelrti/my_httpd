@@ -1,0 +1,14 @@
+*.exe
+*.stackdump
+*.7z
+test.txt
+.vscode
+poll.cpp
+/css
+/img
+/js
+/resume
+*.o
+*.ico
+*.iso
+my_http
