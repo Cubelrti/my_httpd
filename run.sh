@@ -1,0 +1,1 @@
+docker run -p $1:80 my-gcc-app
